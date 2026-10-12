@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VK Support Analytics | Платформа аналитики обращений</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <!-- Plotly.js CDN -->
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+</head>
+<body>
+
+    <!-- Шапка -->
+    <header class="header">
+        <div class="header-left">
+            <h1>Support Analytics Platform</h1>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-secondary" id="export-csv-btn">Экспорт в CSV</button>
+            <button class="btn btn-primary" id="open-modal-btn">+ Новое обращение</button>
+        </div>
+    </header>
+
+    <main class="container">
+
+        <!-- Панель интерактивных фильтров -->
+        <section class="filters-card">
+            <div class="filters-header">
+                <h2>Фильтрация данных и витрин</h2>
+                <button class="btn-link" id="reset-filters-btn">Сбросить фильтры</button>
+            </div>
+            <div class="filters-grid">
+                <div class="filter-group">
+                    <label>Поиск по тексту / тегу</label>
+                    <input type="text" id="filter-search" placeholder="Ключевое слово или тег...">
+                </div>
+                <div class="filter-group">
+                    <label>Категория</label>
+                    <select id="filter-category">
+                        <option value="">Все категории</option>
+                        <option value="bug">Баг</option>
+                        <option value="ui_ux">Интерфейс (UI/UX)</option>
+                        <option value="complaint">Жалоба</option>
+                        <option value="feature_request">Идея / Фича</option>
+                        <option value="question">Вопрос</option>
+                        <option value="other">Другое</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Статус</label>
+                    <select id="filter-status">
+                        <option value="">Все статусы</option>
+                        <option value="new">Новый</option>
+                        <option value="in progress">В работе</option>
+                        <option value="closed">Закрыт</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Приоритет</label>
+                    <select id="filter-priority">
+                        <option value="">Все приоритеты</option>
+                        <option value="high">Высокий</option>
+                        <option value="mid">Средний</option>
+                        <option value="low">Низкий</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Тональность</label>
+                    <select id="filter-sentiment">
+                        <option value="">Любая</option>
+                        <option value="negative">Негативная</option>
+                        <option value="neutral">Нейтральная</option>
+                        <option value="positive">Позитивная</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- KPI Метрики -->
+        <section class="kpi-grid">
+            <div class="kpi-card">
+                <span class="kpi-label">Всего обращений</span>
+                <span class="kpi-value" id="kpi-total">0</span>
+                <span class="kpi-sub">по выбранному срезу</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Новых в очереди</span>
+                <span class="kpi-value" id="kpi-new">0</span>
+                <span class="kpi-sub">требуют внимания</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Высокий приоритет</span>
+                <span class="kpi-value alert" id="kpi-high">0</span>
+                <span class="kpi-sub">критические сбои</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Доля негатива</span>
+                <span class="kpi-value" id="kpi-sentiment">0%</span>
+                <span class="kpi-sub">уровень недовольства</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Средний CSAT</span>
+                <span class="kpi-value" id="kpi-csat">0%</span>
+                <span class="kpi-sub">оценка клиентов (1-5)</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Средний MTTR</span>
+                <span class="kpi-value" id="kpi-mttr">0%</span>
+                <span class="kpi-sub">время решения тикета</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">SLA Compliance</span>
+                <span class="kpi-value" id="kpi-sla">0%</span>
+                <span class="kpi-sub">решено в рамках норматива</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Открытый бэклог</span>
+                <span class="kpi-value" id="kpi-backlog">0%</span>
+                <span class="kpi-sub">в очереди  и в работе</span>
+            </div>
+        </section>
+
+        <!-- Блок автоматических AI-гипотез -->
+        <section class="hypotheses-card">
+            <div class="hypotheses-header">
+                <h3>Автоматические гипотезы и инсайты системы</h3>
+                <span class="ai-badge">AI Analytics</span>
+            </div>
+            <div id="hypotheses-list" class="hypotheses-list">
+                <div class="empty-hint">Загрузка инсайтов...</div>
+            </div>
+        </section>
+
+        <!-- Сетка графиков Plotly -->
+        <section class="charts-grid">
+            <div class="chart-card">
+                <h3>Распределение по категориям</h3>
+                <div id="chart-category" class="chart-box"></div>
+            </div>
+            <div class="chart-card">
+                <h3>ТОП-5 проблем по тегам</h3>
+                <div id="chart-tags" class="chart-box"></div>
+            </div>
+            <div class="chart-card">
+                <h3>Тональность обращений</h3>
+                <div id="chart-sentiment" class="chart-box"></div>
+            </div>
+            <div class="chart-card full-width">
+                <h3>Динамика обращений по дням (Time Series)</h3>
+                <div id="chart-timeline" class="chart-box"></div>
+            </div>
+        </section>
+
+        <!-- Таблица тикетов -->
+        <section class="table-card">
+            <div class="table-header">
+                <h3>Реестр обращений</h3>
+                <span class="table-count" id="table-count">Записей: 0</span>
+            </div>
+            <div class="table-wrapper">
+                <table class="tickets-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Пользователь</th>
+                            <th>Тема и Описание</th>
+                            <th>Категория</th>
+                            <th>Теги</th>
+                            <th>Приоритет</th>
+                            <th>Тональность</th>
+                            <th>Статус</th>
+                            <th>Дата</th>
+                            <th>Действие</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tickets-tbody">
+                        <tr><td colspan="10" class="empty-td">Загрузка данных...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Модальное окно создания тикета -->
+    <div class="modal" id="ticket-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Новое обращение в поддержку</h3>
+                <button class="modal-close" id="close-modal-btn">&times;</button>
+            </div>
+            <form id="new-ticket-form">
+                <div class="form-group">
+                    <label>Логин пользователя *</label>
+                    <input type="text" id="form-user-login" required placeholder="например: ivan_petrov">
+                </div>
+                <div class="form-group">
+                    <label>Текст обращения *</label>
+                    <textarea id="form-description" rows="4" required placeholder="Опишите проблему своими словами (нейросеть сама определит заголовок, категорию, тональность и тег)..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Технические детали (опционально)</label>
+                    <input type="text" id="form-details" placeholder="iPhone 14, iOS 17.5, VK App v5.4">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancel-modal-btn">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Создать обращение</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
